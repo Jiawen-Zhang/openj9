@@ -294,13 +294,8 @@ SH_CacheMap::initialize(J9JavaVM* vm, J9SharedClassConfig* sharedClassConfig, Bl
 	_isAssertEnabled = true;
 	_metadataReleased = false;
 	
-	/* TODO: Need this function to be able to return pass/fail */
-#if defined(J9SHR_CACHELET_SUPPORT)
-	_ccPool = pool_new(SH_CompositeCacheImpl::getRequiredConstrBytes(true, startupForStats),  0, 0, 0, J9_GET_CALLSITE(), J9MEM_CATEGORY_CLASSES, POOL_FOR_PORT(_portlib));
-#else
 	_ccPool = NULL;
-#endif
-
+	
 	_managers = SH_Managers::newInstance(vm, (SH_Managers *)allocPtr);
 
 	_ccHead = _cc = SH_CompositeCacheImpl::newInstance(vm, sharedClassConfig, (SH_CompositeCacheImpl*)(allocPtr += SH_Managers::getRequiredConstrBytes()), cacheName, cacheTypeRequired, startupForStats, topLayer);
@@ -703,71 +698,7 @@ error:
 		return -1;
 	}
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/* readCache() updates the segment list if it reads in a cachelet */
-	enterLocalMutex(currentThread, currentThread->javaVM->classMemorySegments->segmentMutex, "class segment mutex", "CM startup");
-	/* THREADING: We want the cache mutex here as we are reading all available data. Don't want updates happening as we read. */
-	if (_ccHead->enterWriteMutex(currentThread, false, fnName)==0) {
-		 /* populate the hashtables */
-		itemsRead = readCache(currentThread, _ccHead, -1, false);
-		_ccHead->exitWriteMutex(currentThread, fnName);
-		exitLocalMutex(currentThread, currentThread->javaVM->classMemorySegments->segmentMutex, "class segment mutex", "CM startup");
-
-		if (CM_READ_CACHE_FAILED == itemsRead) {
-			Trc_SHR_CM_startup_Exit6(currentThread);
-			return -1;
-		}
-		if (CM_CACHE_CORRUPT == itemsRead) {
-			reportCorruptCache(currentThread, _ccHead);
-			Trc_SHR_CM_startup_Exit6(currentThread);
-			return -1;
-		}
-		/* CMVC 160728:
-		 * Calling 'updateROMSegmentList()' here when J9SHR_CACHELET_SUPPORT is defined caused
-		 * the below assert to fail intermittently in SH_CompositeCacheImpl::countROMSegments().
-		 *
-		 * Trc_SHR_Assert_False((segment->baseAddress < getBaseAddress()) ||
-		 *                     (segment->heapTop > getCacheLastEffectiveAddress()));
-		 *
-		 * The assert fails because when looking up a segment in 'javaVM->classMemorySegments->avlTreeData'
-		 * because a segment for the 'whole cache' was returned instead of the expected 'cachelet'. If the VM gets
-		 * beyond this assert bad metadata can be written to the cache during VM shutdown (e.g. because
-		 * the trace point is level 10, and fatal asserts are disabled, in some branches).
-		 *
-		 * Not calling 'updateROMSegmentList()' ensures a segment for the 'whole cache' is never added.
-		 *
-		 * Before this change there were 2 situations where 'updateROMSegmentList()' was called.
-		 * 		1.) With an empty cache
-		 * 		2.) With a cache containing data
-		 *
-		 * The 1st case is the one that caused the problem/defect. In this case a segment for the 'whole cache' is added
-		 * to the JVM because _cacheletHead == NULL, and _cc is started.
-		 *
-		 * The 2nd case is simply an optimization. In this case the call to 'updateROMSegmentList()' does no
-		 * work because cacheletHead != NULL, and cacheletHead is NOT started.
-		 *
-		 * CMVC 189626: Not calling updateROMSegmentList in 2nd case causes incorrect behavior
-		 * when the existing cache is non-reatlime.
-		 * Therefore the fix has been updated such that 'updateROMSegmentList()' is called when
-		 * using existing cache (i.e. _runningNested is false) and the cache is non-realtime (no cachelets are present).
-		 *
-		 * When J9SHR_CACHELET_SUPPORT is defined, and we are creating a new cache, it should be noted
-		 * that updateROMSegmentList() is still called elsewhere. Specifically it is called when the
-		 * first shared class transaction calls, SH_CacheMap::commitROMClass() via
-		 * j9shr_classStoreTransaction_stop().
-		 */
-		if ((false == _runningNested) && (false == _ccHead->getContainsCachelets())) {
-#endif /*J9SHR_CACHELET_SUPPORT*/
-			updateROMSegmentList(currentThread, false);
-#if defined(J9SHR_CACHELET_SUPPORT)
-		}
-	} else {
-		CACHEMAP_TRACE(J9SHR_VERBOSEFLAG_ENABLE_VERBOSE_DEFAULT, J9NLS_ERROR, J9NLS_SHRC_CM_FAILED_ENTER_WRITE_MUTEX_STARTUP);
-		Trc_SHR_CM_startup_Exit7(currentThread);
-		return -1;
-	}
-#endif
-
+	updateROMSegmentList(currentThread, false);
 	Trc_SHR_CM_startup_ExitOK(currentThread);
 	return 0;
 }
@@ -1237,47 +1168,6 @@ SH_CacheMap::readCache(J9VMThread* currentThread, SH_CompositeCacheImpl* cache, 
 					Trc_SHR_Assert_ShouldNeverHappen();
 					result = CM_READ_CACHE_FAILED;
 				}
-#if defined(J9SHR_CACHELET_SUPPORT)
-				/* Initialize cachelets, but don't start them up */
-				if ((cache == _cc) && (itemType == TYPE_CACHELET)) {
-					CacheletWrapper* wrapper = (CacheletWrapper*)ITEMDATA(it);
-					BlockPtr cacheletMemory = (BlockPtr)CLETDATA(wrapper);
-					SH_CompositeCacheImpl* cachelet = _cacheletHead; /* this list currently spans all supercaches */
-					while (cachelet) {
-						if (cachelet->getNestedMemory() == cacheletMemory) {
-							/* cachelet is already initialized */
-							break;
-						}
-						cachelet = cachelet->getNext();
-					}
-					
-					if (cachelet == NULL) {
-						if (!(cachelet = initCachelet(currentThread, (BlockPtr)cacheletMemory, false))) {
-							Trc_SHR_CM_readCache_initCacheletFailed(currentThread, cacheletMemory);
-							result = CM_READ_CACHE_FAILED;
-							goto readCache_stop;
-						}
-						Trc_SHR_CM_readCache_initCachelet(currentThread, cachelet, cacheletMemory);
-
-						if ((startupForStats == false) && (readCacheletHints(currentThread, cachelet, wrapper) != 0)) {
-							result = CM_READ_CACHE_FAILED;
-							goto readCache_stop;
-						}
-
-						/**
-						 * @warn This code assumes it will only run during the initial CacheMap::startup()!!
-						 * The caller must have the VM class segment mutex.
-						 * This will break if, after startup(), cachelet metadata can be added to the cache,
-						 * or if cachelets can contain cachelets.
-						 */
-						if ((startupForStats == false) && (!readCacheletSegments(currentThread, cachelet, wrapper))) {
-							result = CM_READ_CACHE_FAILED;
-							CACHEMAP_PRINT(J9NLS_ERROR, J9NLS_SHRC_CM_FAILED_INIT_SEGMENTS);
-							goto readCache_stop;
-						}
-					}
-				}
-#endif
 			}
 		}
 	} while ((it != NULL) && (result != CM_READ_CACHE_FAILED) && (result != CM_CACHE_CORRUPT) && (expectedCntr==-1 || expectedCntr>0));
@@ -1290,9 +1180,6 @@ SH_CacheMap::readCache(J9VMThread* currentThread, SH_CompositeCacheImpl* cache, 
 		}
 	}
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-readCache_stop:
-#endif
 	if ((expectedUpdates != -1) && (result != expectedUpdates)) {
 		Trc_SHR_CM_readCache_Event_NotMatched(currentThread, expectedUpdates, result);
 	}
@@ -1404,63 +1291,18 @@ SH_CacheMap::resetAllManagers(J9VMThread* currentThread)
 	return 0;
 }
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-
-/* Note that when we're using cachelets, we don't lazily initialize managers as they all need to keep a cachelet list */
-void
-SH_CacheMap::updateAllManagersWithNewCacheArea(J9VMThread* currentThread, SH_CompositeCacheImpl* newCacheArea)
-{
-	SH_Manager* walkManager;
-	SH_Managers::ManagerWalkState state;
-
-	/* With cachelets, we should assume that the managers are started */
-	walkManager = managers()->startDo(currentThread, MANAGER_STATE_STARTED, &state);
-	while (walkManager) {
-		walkManager->addNewCacheArea(newCacheArea);
-		walkManager = managers()->nextDo(&state);
-	}
-}
-
-#endif /* J9SHR_CACHELET_SUPPORT */
-
 /* THREADING: Must have cache write mutex */
 SH_CompositeCacheImpl*
 SH_CacheMap::getCacheAreaForDataType(J9VMThread* currentThread, UDATA dataType, UDATA dataLength)
 {
 	SH_CompositeCacheImpl* cacheletForAllocate = NULL;
-#if defined(J9SHR_CACHELET_SUPPORT)	
-	SH_Manager* managerForDataType = NULL;
-#endif
 
 	Trc_SHR_Assert_True(_ccHead->hasWriteMutex(currentThread));
 
 	if (!_runningNested) {
 		return _ccHead;
 	}
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/* If the dataLength is bigger than the cachelet size, it can't be stored. */
-	if (dataLength > J9SHR_DEFAULT_CACHELET_SIZE) {
-		return NULL;
-	}
-	managerForDataType = managers()->getManagerForDataType(dataType);
-	cacheletForAllocate = managerForDataType->getCacheAreaForData(this, currentThread, dataType, dataLength);
-	if (cacheletForAllocate == NULL) {
-		/* TODO CMVC 139772 If a new supercache is created, must ensure that supercache size > dataLength */
-		cacheletForAllocate = createNewCachelet(currentThread);
-		if (cacheletForAllocate != NULL) {
-			if (managerForDataType->canShareNewCacheletsWithOtherManagers()) {
-				updateAllManagersWithNewCacheArea(currentThread, cacheletForAllocate);
-			} else {
-				managerForDataType->addNewCacheArea(cacheletForAllocate);
-			}
-		} else {
-			/* Either cachelet is corrupt or there is not enough space to allocate new cachelet.
-			 * In latter case, cache would have already been marked full in SH_CompositeCacheImpl::allocate().
-			 */
-			return NULL;
-		}
-	}
-#endif
+
 	Trc_SHR_Assert_True(_ccHead->hasWriteMutex(currentThread));
 	return cacheletForAllocate;
 }
@@ -5331,17 +5173,6 @@ SH_CacheMap::printCacheStats(J9VMThread* currentThread, UDATA showFlags, U_64 ru
 	bool multiLayerStats = J9_ARE_NO_BITS_SET(showFlags, PRINTSTATS_SHOW_TOP_LAYER_ONLY);
 	PORT_ACCESS_FROM_PORT(_portlib);
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/* startup all cachelets to get stats */
-	cache = _cacheletHead; /* this list currently spans all supercaches */
-	while (cache) {
-		if ( CC_STARTUP_OK != startupCachelet(currentThread, cache) ) {
-			return -1;
-		}
-		cache = cache->getNext();
-	}
-#endif
-
 	if (0 != showFlags) {
 		SH_CompositeCacheImpl* cache = _ccTail;
 		if (J9_ARE_ALL_BITS_SET(showFlags, PRINTSTATS_SHOW_TOP_LAYER_ONLY)) {
@@ -5541,32 +5372,9 @@ SH_CacheMap::getRomClassAreaBounds(void ** romClassAreaStart, void ** romClassAr
 		*romClassAreaStart = _ccHead->getBaseAddress();
 	}
 	if (romClassAreaEnd) {
-#if defined(J9SHR_CACHELET_SUPPORT)
-		*romClassAreaEnd = _ccHead->getCacheLastEffectiveAddress();
-#else
 		*romClassAreaEnd = (void *)_ccHead->getSegmentAllocPtr();
-#endif
 	}
 }
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-void
-SH_CacheMap::getBoundsForCache(SH_CompositeCacheImpl* cache, BlockPtr* cacheStart, BlockPtr* romClassEnd, BlockPtr* metaStart, BlockPtr* cacheEnd)
-{
-	if (cacheStart) {
-		*cacheStart = (BlockPtr)cache->getBaseAddress();
-	}
-	if (romClassEnd) {
-		*romClassEnd = (BlockPtr)cache->getSegmentAllocPtr();
-	}
-	if (metaStart) {
-		*metaStart = (BlockPtr)cache->getMetaAllocPtr();
-	}
-	if (cacheEnd) {
-		*cacheEnd = (BlockPtr)cache->getCacheEndAddress();
-	}
-}
-#endif
 
 IDATA 
 SH_CacheMap::enterStringTableMutex(J9VMThread* currentThread, BOOLEAN readOnly, UDATA* doRebuildLocalData, UDATA* doRebuildCacheData)
@@ -5779,30 +5587,6 @@ SH_CacheMap::getAttachedDataManager(J9VMThread* currentThread)
 	return NULL;
 }
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-
-UDATA
-SH_CacheMap::startAllManagers(J9VMThread* currentThread)
-{
-	if (getScopeManager(currentThread) == NULL) {
-		return 0;
-	}
-	if (getClasspathManager(currentThread) == NULL) {
-		return 0;
-	}
-	if (getROMClassManager(currentThread) == NULL) {
-		return 0;
-	}
-	if (getByteDataManager(currentThread) == NULL) {
-		return 0;
-	}
-	if (getCompiledMethodManager(currentThread) == NULL) {
-		return 0;
-	}
-	return 1;
-}
-
-#endif /* J9SHR_CACHELET_SUPPORT */
 
 	/************************************** STUFF EXCLUSIVE TO CACHELETS *********************************/
 
