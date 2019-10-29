@@ -87,12 +87,6 @@ protected:
 	HashLinkedListImpl* localHLLNewInstance(HashLinkedListImpl* memForConstructor) {
 		return new(memForConstructor) HashLinkedListImpl();
 	}
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual bool canCreateHints();
-	virtual IDATA createHintsForCachelet(J9VMThread* vmthread, SH_CompositeCache* cachelet, CacheletHints* hints);
-	virtual IDATA primeHashtables(J9VMThread* vmthread, SH_CompositeCache* cachelet, U_8* hintsData, UDATA datalength);
-#endif
 	
 private:
 	SH_TimestampManager* _tsm;

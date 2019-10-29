@@ -35,23 +35,6 @@ extern "C"
 /* A size greater than the shared cache size (or softmx size if it is set) */
 #define ROMCLASS_LARGE_SIZE (70 * 1024 *1024)
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-IDATA
-testSCStoreTransaction(J9JavaVM* vm)
-{
-	const char * testName = "testSCStoreTransaction";
-	if (NULL == vm) {
-		/*vm is null*/
-		return TEST_ERROR;
-	}
-	PORT_ACCESS_FROM_JAVAVM(vm);
-
-	/*Note: we do this b/c test fails on realtime currently unless there is an existing cache*/
-	j9tty_printf(PORTLIB, "Skip these tests on realtime b/c cache is readonly\n", testName);
-	return TEST_PASS;
-}
-#else
-
 static IDATA AddClassToCacheHelper(J9VMThread* currentThread, J9ClassLoader* classloader, UDATA entryIndex, UDATA loadType, U_16 classnameLength, U_8 * classnameData, U_32 romclassSize);
 static IDATA test1(J9JavaVM* vm);
 static IDATA test2(J9JavaVM* vm);
@@ -2314,5 +2297,3 @@ test29(J9JavaVM* vm)
 	done:
 	return retval;
 }
-
-#endif /*defined(J9SHR_CACHELET_SUPPORT)*/

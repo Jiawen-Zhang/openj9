@@ -32,23 +32,6 @@ extern "C"
 #define TEST_PASS 0
 #define TEST_ERROR -1
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-IDATA
-testSCStringTransaction(J9JavaVM* vm)
-{
-	char * testName = "testSCStringTransaction";
-	if (vm == NULL) {
-		/*vm is null*/
-		return TEST_ERROR;
-	}
-	PORT_ACCESS_FROM_JAVAVM(vm);
-
-	/*Note: we do this b/c test fails on realtime currently unless there is an existing cache*/
-	j9tty_printf(PORTLIB, "Skip these tests on realtime b/c cache is readonly\n", testName);
-	return TEST_PASS;
-}
-#else
-
 static IDATA test1(J9JavaVM* vm);
 static IDATA test2(J9JavaVM* vm);
 static IDATA test3(J9JavaVM* vm);
@@ -175,5 +158,3 @@ test3(J9JavaVM* vm)
 	vm->mainThread->javaVM->sharedClassConfig->runtimeFlags &= ~J9SHR_RUNTIMEFLAG_BLOCK_SPACE_FULL;
 	return retval;
 }
-
-#endif /*defined(J9SHR_CACHELET_SUPPORT)*/

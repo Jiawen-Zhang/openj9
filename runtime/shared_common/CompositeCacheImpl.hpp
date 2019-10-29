@@ -81,17 +81,6 @@ public:
 	static UDATA getRequiredConstrBytes(bool isNested, bool startupForStats);
 	
 	static UDATA getRequiredConstrBytesWithCommonInfo(bool isNested, bool startupForStats);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	static SH_CompositeCacheImpl* newInstanceNested(J9JavaVM* vm, SH_CompositeCacheImpl* parent, SH_CompositeCacheImpl* memForConstructor, UDATA nestedSize, BlockPtr nestedMemory, bool creatingCachelet);
-
-	IDATA startupNested(J9VMThread* currentThread);
-
-	static SH_CompositeCacheImpl* newInstanceChained(J9JavaVM* vm, SH_CompositeCacheImpl* memForConstructor, J9SharedClassConfig* sharedClassConfig, I_32 cacheTypeRequired);
-
-	IDATA startupChained(J9VMThread* currentThread, SH_CompositeCacheImpl* ccHead,
-			J9SharedClassPreinitConfig* piconfig, U_32* actualSize, UDATA* localCrashCntr);
-#endif /* J9SHR_CACHELET_SUPPORT */
 	
 	static SH_CompositeCacheImpl* newInstance(J9JavaVM* vm, J9SharedClassConfig* sharedClassConfig, SH_CompositeCacheImpl* memForConstructor, const char* cacheName, I_32 newPersistentCacheReqd, bool startupForStats, I_8 layer);
 	
@@ -295,37 +284,6 @@ public:
 	void setLineNumberContentEnabled(J9VMThread* currentThread);
 
 	UDATA getOSPageSize(void);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	bool copyFromCacheChain(J9VMThread* currentThread, SH_CompositeCacheImpl* _ccHead, IDATA* metadataOffset);
-	
-	SH_CompositeCacheImpl* getParent(void);
-	
-	IDATA getDeployedOffset(void);
-
-	void setDeployedOffset(IDATA offset);
-	
-	IDATA fixupSerializedCompiledMethods(J9VMThread* currentThread, void*
-			serializedROMClassStartAddress);
-	
-#if defined(J9SHR_CACHELETS_SAVE_READWRITE_AREA)
-	UDATA computeDeployedReadWriteOffsets(J9VMThread* currentThread, SH_CompositeCacheImpl* ccHead);
-	IDATA getDeployedReadWriteOffset(void);
-	void setDeployedReadWriteOffset(IDATA offset);
-#endif
-
-#if 0
-	void growCacheInPlace(UDATA rwGrowth, UDATA freeGrowth);
-#endif
-	
-	BlockPtr getNestedMemory(void);
-
-	UDATA countROMSegments(J9VMThread* currentThread);
-	UDATA writeROMSegmentMetadata(J9VMThread* currentThread, UDATA numSegments, BlockPtr dest, UDATA* lastSegmentAlloc); 
-
-	IDATA lockStartupMonitor(J9VMThread* currentThread);
-	void unlockStartupMonitor(J9VMThread* currentThread);
-#endif /* J9SHR_CACHELET_SUPPORT */
 	
 	bool getContainsCachelets(void);
 
@@ -344,10 +302,6 @@ public:
 	IDATA startupForStats(J9VMThread* currentThread, SH_OSCache * oscache, U_64 * runtimeFlags, UDATA verboseFlags);
 
 	IDATA shutdownForStats(J9VMThread* currentThread);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	IDATA startupNestedForStats(J9VMThread* currentThread);
-#endif
 
 	static IDATA getNumRequiredOSLocks();
 
@@ -526,38 +480,6 @@ private:
 	
 	I_8 _layer;
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/**
-	 * @bug THIS IS A HORRIBLE HACK FOR CMVC 141328. THIS WILL NOT WORK FOR NON-READONLY CACHES.
-	 * In the non-readonly case, cachelet startup is completely broken due to a lock ordering 
-	 * problem involving the write area mutex. Deadlock scenario:  
-	 * <table>
-	 * <tr><th>Thread A<th>Thread B</tr>
-	 * <tr><td>storeSharedClass()<td>findCompiledMethod()</tr>
-	 * <tr><td>enterWriteMutex()<td>enterReadMutex()</tr>
-	 * <tr><td>startupHintCachelets()<td>startupHintCachelets()</tr>
-	 * <tr><td>block on _startupMonitor<td>lock _startupMonitor</tr>
-	 * <tr><td>- <td>run startup(), block in enterWriteMutex()</tr>
-	 * </table>
-	 * 
-	 * _startupMonitor protects against:
-	 * <ol>
-	 * <li>the cachelet being simultaneously started by different threads from the same manager
-	 * <li>the cachelet being simultaneously started by different threads from different managers
-	 * <li>one thread seeing the cachelet as started before readCache() on it was done
-	 * </ol>
-	 * Always get _startupMonitor before the refresh mutex. We should never need to startup a
-	 * cachelet while holding the refresh mutex.
-	 * @see SH_Manager::startupHintCachelets, SH_ROMClassResourceManager::rrmTableLookup
-	 */
-	omrthread_monitor_t _startupMonitor;
-	IDATA _deployedOffset;
-#if defined(J9SHR_CACHELETS_SAVE_READWRITE_AREA)
-	IDATA _deployedReadWriteOffset;
-	bool _commitParent;
-#endif
-#endif
-
 	/* All instances of this class share a common debug & raw class data region
 	 */
 	ClassDebugDataProvider * _debugData;
@@ -575,10 +497,6 @@ private:
 	void initialize(J9JavaVM* vm, BlockPtr memForConstructor, J9SharedClassConfig* sharedClassConfig, const char* cacheName, I_32 cacheTypeRequired, bool startupForStats, I_8 layer);
 	void initializeWithCommonInfo(J9JavaVM* vm, J9SharedClassConfig* sharedClassConfig, BlockPtr memForConstructor, const char* cacheName, I_32 newPersistentCacheReqd, bool startupForStats, I_8 layer);
 	void initCommonCCInfoHelper();
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	void initializeNested(J9JavaVM* vm, SH_CompositeCacheImpl* parent, BlockPtr memForConstructor, UDATA nestedSize, BlockPtr nestedMemory, bool creatingCachelet);
-#endif
 
 	void commonInit(J9JavaVM* vm);
 	
@@ -605,10 +523,6 @@ private:
 	U_32 getCacheAreaCRC(U_8* areaStart, U_32 areaSize);
 	void updateCacheCRC(void);
 	bool checkCacheCRC(bool* cacheHasIntegrity, UDATA *crcValue);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	void setContainsCachelets(J9VMThread* currentThread);
-#endif
 
 	IDATA setRegionPermissions(J9PortLibrary* portLibrary, void *address, UDATA length, UDATA flags);
 

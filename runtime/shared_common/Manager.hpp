@@ -79,9 +79,6 @@ public:
 	{
 	public:
 		const ShcItem* _item;
-#if defined(J9SHR_CACHELET_SUPPORT)
-		SH_CompositeCache* _cachelet;
-#endif
 		LinkedListImpl* _next;
 
 		void *operator new(size_t size, void *memoryPtr) { return memoryPtr; };
@@ -131,28 +128,6 @@ public:
 		{
 		}
 	};
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	class CacheletListItem
-	{
-	public :
-		UDATA _dataType;
-		SH_CompositeCacheImpl* cachelet;
-		CacheletListItem* next;
-	};
-
-	struct CacheletMetadata {
-		SH_CompositeCache* cachelet;
-		UDATA numHints;
-		CacheletWrapper* wrapperAddress;
-		CacheletHints* hintsArray;	
-	};
-
-	struct CacheletMetadataArray {
-		UDATA numMetas;
-		CacheletMetadata* metadataArray;
-	};
-#endif /* J9SHR_CACHELET_SUPPORT */
 	
 	/* This function must be implemented by the manager subclass - it should store the new item given in its hashtable */
 	virtual bool storeNew(J9VMThread* currentThread, const ShcItem* itemInCache, SH_CompositeCache* cachelet) = 0;
@@ -168,36 +143,10 @@ public:
 	IDATA startup(J9VMThread* currentThread, U_64* runtimeFlags, UDATA verboseFlags, UDATA cacheSize);
 
 	U_8 getState();
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	SH_CompositeCacheImpl* getCacheAreaForData(SH_CacheMap* cm, J9VMThread* currentThread, UDATA dataType, UDATA dataLength);
-
-	void addNewCacheArea(SH_CompositeCacheImpl* newCache);
-	
-	bool canShareNewCacheletsWithOtherManagers();
-#endif
 
 	/* This function gives the manager a chance to perform operations on exit 
 	 * This should NOT include freeing any resources */
 	virtual void runExitCode(void) = 0;
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	IDATA primeFromHints(J9VMThread* vmthread, SH_CompositeCache* cachelet, U_8* hintsData, UDATA datalength);
-
-	IDATA generateHints(J9VMThread* vmthread, CacheletMetadataArray* metadataArray);
-	
-	virtual void fixupHintsForSerialization(J9VMThread* vmthread,
-			UDATA dataType, UDATA dataLen, U_8* data,
-			IDATA deployedOffset, void* serializedROMClassStartAddress) {}
-#endif
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	IDATA freeHintData(J9VMThread* vmthread, CacheletMetadataArray* metadataArray);
-#endif
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual bool canCreateHints();
-#endif
 
 	bool isDataTypeRepresended(UDATA type);
 
@@ -211,12 +160,6 @@ protected:
 	U_64* _runtimeFlagsPtr;
 	UDATA _verboseFlags;
 	J9HashTableDoFn _hashTableGetNumItemsDoFn;
-#if defined(J9SHR_CACHELET_SUPPORT)
-	CacheletListItem* _cacheletListHead;
-	CacheletListItem* _cacheletListTail;
-	J9Pool* _cacheletListPool;
-	bool _shareNewCacheletsWithOtherManagers;
-#endif
 	bool _isRunningNested;
 		/* Indicates that this manager is aware that the shared cache contains cachelets.
 		 * The cache may or may not be growable (i.e. chained).
@@ -224,9 +167,6 @@ protected:
 		 * NOT equivalent to SH_CacheMap::_runningNested.
 		 */
 	UDATA _dataTypesRepresented[MAX_TYPES_PER_MANAGER];
-#if defined(J9SHR_CACHELET_SUPPORT)
-	ManagerHintTable _hints;
-#endif
 	
 	
 	/* Functions which must be implemented by manager subclasses */
@@ -272,36 +212,8 @@ protected:
 	static UDATA hllHashFn(void* item, void *userData);
 	static UDATA hllHashEqualFn(void* left, void* right, void *userData);
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-
-	struct CacheletHintCountData {
-		SH_CompositeCache* cachelet;
-		UDATA hashCount;
-	};
-
-	static UDATA hllCollectHashOfEntry(void* entry, void* userData);
-	
-	struct CacheletHintHashData {
-		SH_CompositeCache* cachelet;
-		UDATA *hashSlot;
-		void* userData;
-	};
-
-	static UDATA hllCountCacheletHashes(void* entry, void* userData);
-	IDATA hllCollectHashes(J9VMThread* currentThread, SH_CompositeCache* cachelet, CacheletHints* hints);
-#endif
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual IDATA primeHashtables(J9VMThread* vmthread, SH_CompositeCache* cachelet, U_8* hintsData, UDATA datalength);
-	virtual IDATA createHintsForCachelet(J9VMThread* vmthread, SH_CompositeCache* cachelet, CacheletHints* hints);
-	IDATA startupHintCachelets(J9VMThread* currentThread, UDATA hint);
-#endif
-
 private:
 	UDATA _state;
-#if defined(J9SHR_CACHELET_SUPPORT)
-	bool _allCacheletsStarted;
-#endif
 	
 	const char* _managerType;
 
@@ -314,15 +226,7 @@ private:
 
 	static UDATA countItemsInList(void* node, void* countData);
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	bool isCacheletInList(SH_CompositeCache* cachelet);
-#endif
-
 	static UDATA generateHash(J9InternalVMFunctions* internalFunctionTable, U_8* key, U_16 keySize);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	J9Pool* getCacheletListPool(void); 
-#endif
 };
 
 #endif /* !defined(MANAGER_HPP_INCLUDED) */

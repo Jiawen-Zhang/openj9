@@ -232,7 +232,6 @@ IDATA
 AOTDataMinMaxTest::StoreAOTDataFailureOnMinMaxTest(IDATA iteration)
 {
 	IDATA rc = PASS;
-#if !defined(J9SHR_CACHELET_SUPPORT)
 	const U_8* storedMethod;
 	J9VMThread *currentThread;
 	J9SharedClassJavacoreDataDescriptor descriptor;
@@ -282,7 +281,6 @@ AOTDataMinMaxTest::StoreAOTDataFailureOnMinMaxTest(IDATA iteration)
 		}
 	}
 	UnitTest::unitTest = UnitTest::NO_TEST;
-#endif
 	return rc;
 }
 

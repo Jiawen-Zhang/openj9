@@ -46,10 +46,6 @@ class SH_SharedCache
 public:
 	typedef char* BlockPtr;
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual bool serializeSharedCache(J9VMThread* currentThread) = 0;
-#endif
-
 	virtual const J9ROMClass* findROMClass(J9VMThread* currentThread, const char* path, ClasspathItem* classpath, const J9UTF8* partition, const J9UTF8* modContext, IDATA confirmedEntries, IDATA* foundAtIndex) = 0;
 
 	virtual const U_8* storeCompiledMethod(J9VMThread* currentThread, const J9ROMMethod* romMethod, const U_8* dataStart, UDATA dataSize, const U_8* codeStart, UDATA codeSize, UDATA forceReplace) = 0;
@@ -103,11 +99,7 @@ public:
 	virtual void notifyClasspathEntryStateChange(J9VMThread* currentThread, const char* path, UDATA newState) = 0;
 
 	virtual SH_CompositeCache* getCompositeCacheAPI() = 0;
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual IDATA startupCachelet(J9VMThread* currentThread, SH_CompositeCache* cachelet) = 0;
-#endif
-	
+
 	virtual IDATA getAndStartManagerForType(J9VMThread* currentThread, UDATA dataType, SH_Manager** startedManager) = 0;
 	
 	virtual void getRomClassAreaBounds(void ** romClassAreaStart, void ** romClassAreaEnd) = 0;

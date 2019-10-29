@@ -228,7 +228,6 @@ IDATA
 AttachedDataMinMaxTest::StoreAttachedDataFailureOnMinMaxTest(IDATA iteration, U_16 attachedDataType)
 {
 	IDATA rc = PASS;
-#if !defined(J9SHR_CACHELET_SUPPORT)
 	UDATA rV = 0;
 	const char * testName = "StoreAttachedDataFailureOnMinMaxTest";
 	J9SharedClassJavacoreDataDescriptor descriptor;
@@ -281,7 +280,6 @@ AttachedDataMinMaxTest::StoreAttachedDataFailureOnMinMaxTest(IDATA iteration, U_
 		}
 	}
 	UnitTest::unitTest = UnitTest::NO_TEST;
-#endif
 	return rc;
 }
 

@@ -78,11 +78,6 @@ public:
 
 	IDATA startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* piconfig, const char* rootName, const char* cacheDirName, UDATA cacheDirPerm, BlockPtr cacheMemoryUT, bool* cacheHasIntegrity);
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/* @see SharedCache.hpp */
-	virtual bool serializeSharedCache(J9VMThread* currentThread);
-#endif
-
 	/* @see SharedCache.hpp */
 	virtual IDATA enterLocalMutex(J9VMThread* currentThread, omrthread_monitor_t monitor, const char* name, const char* caller);
 
@@ -192,11 +187,6 @@ public:
 	virtual void notifyClasspathEntryStateChange(J9VMThread* currentThread, const char* path, UDATA newState);
 	
 	static IDATA createPathString(J9VMThread* currentThread, J9SharedClassConfig* config, char** pathBuf, UDATA pathBufSize, ClasspathEntryItem* cpei, const char* className, UDATA classNameLen, bool* doFreeBuffer);
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	/* @see SharedCache.hpp */
-	virtual IDATA startupCachelet(J9VMThread* currentThread, SH_CompositeCache* cachelet);
-#endif
 	
 	/* @see SharedCache.hpp */
 	virtual IDATA getAndStartManagerForType(J9VMThread* currentThread, UDATA dataType, SH_Manager** startedManager);
@@ -432,47 +422,9 @@ private:
 
 	void updateAverageWriteHashTime(UDATA actualTimeMicros);
 
-#if defined(J9SHR_CACHELET_SUPPORT)
-	UDATA startAllManagers(J9VMThread* currentThread);
-
-	void getBoundsForCache(SH_CompositeCacheImpl* cache, BlockPtr* cacheStart, BlockPtr* romClassEnd, BlockPtr* metaStart, BlockPtr* cacheEnd);
-
-	J9SharedClassCacheDescriptor* appendCacheDescriptorList(J9VMThread* currentThread, J9SharedClassConfig* sharedClassConfig);
-#endif
-
 	J9SharedClassCacheDescriptor* appendCacheDescriptorList(J9VMThread* currentThread, J9SharedClassConfig* sharedClassConfig, SH_CompositeCacheImpl* ccToUse);
 	
 	void resetCacheDescriptorList(J9VMThread* currentThread, J9SharedClassConfig* sharedClassConfig);
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	SH_CompositeCacheImpl* initCachelet(J9VMThread* currentThread, BlockPtr cacheletMemory, bool creatingCachelet);
-
-	SH_CompositeCacheImpl* createNewCachelet(J9VMThread* currentThread); 
-	
-	IDATA readCacheletHints(J9VMThread* currentThread, SH_CompositeCacheImpl* cachelet, CacheletWrapper* cacheletWrapper);
-	bool readCacheletSegments(J9VMThread* currentThread, SH_CompositeCacheImpl* cachelet, CacheletWrapper* cacheletWrapper);
-
-	IDATA buildCacheletMetadata(J9VMThread* currentThread, SH_Manager::CacheletMetadataArray** metadataArray);
-	IDATA writeCacheletMetadata(J9VMThread* currentThread, SH_Manager::CacheletMetadata* cacheletMetadata);
-	void freeCacheletMetadata(J9VMThread* currentThread, SH_Manager::CacheletMetadataArray* metaArray);
-	void fixupCacheletMetadata(J9VMThread* currentThread, SH_Manager::CacheletMetadataArray* metaArray,
-		SH_CompositeCacheImpl* serializedCache, IDATA metadataOffset);
-
-	bool serializeOfflineCache(J9VMThread* currentThread);
-
-	SH_CompositeCacheImpl* createNewChainedCache(J9VMThread* currentThread, UDATA requiredSize);
-
-	void setDeployedROMClassStarts(J9VMThread* currentThread, void* serializedROMClassStartAddress);
-	IDATA fixupCompiledMethodsForSerialization(J9VMThread* currentThread, void* serializedROMClassStartAddress);
-	
-#if defined(J9SHR_CACHELETS_SAVE_READWRITE_AREA)
-	void fixCacheletReadWriteOffsets(J9VMThread* currentThread);
-#endif
-	
-#if 0
-	IDATA growCacheInPlace(J9VMThread* currentThread, UDATA rwGrowth, UDATA freeGrowth);
-#endif
-#endif
 
 	const J9ROMClass* allocateROMClassOnly(J9VMThread* currentThread, U_32 sizeToAlloc, U_16 classnameLength, const char* classnameData, ClasspathWrapper* cpw, const J9UTF8* partitionInCache, const J9UTF8* modContextInCache, IDATA callerHelperID, bool modifiedNoContext, void * &newItemInCache, void * &cacheAreaForAllocate);
 
@@ -499,10 +451,6 @@ private:
 	const bool parseWildcardMethodSpecTable(MethodSpecTable* specTable, IDATA numSpecs);
 
 	static void updateLocalHintsData(J9VMThread* currentThread, J9SharedLocalStartupHints* localHints, const J9SharedStartupHintsDataDescriptor* hintsDataInCache, bool overwrite);
-
-#if defined(J9SHR_CACHELET_SUPPORT)
-	IDATA startupCacheletForStats(J9VMThread* currentThread, SH_CompositeCache* cachelet);
-#endif /*J9SHR_CACHELET_SUPPORT*/
 
 	IDATA getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccToUse, bool startupForStats, const char** prereqCacheID, UDATA* idLen);
 

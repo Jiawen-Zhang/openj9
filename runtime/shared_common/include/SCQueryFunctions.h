@@ -33,9 +33,6 @@ extern "C"
 {
 #endif
 
-#if defined (J9VM_SHRTEST) && defined (J9SHR_CACHELET_SUPPORT)
-/*This function is not used from shrtest -Xrealtime */
-#else
 static BOOLEAN
 j9shr_Query_IsCacheFull(J9JavaVM *vm)
 {
@@ -48,7 +45,6 @@ j9shr_Query_IsCacheFull(J9JavaVM *vm)
 	}
 	return retval;
 }
-#endif
 
 /**
  * 	Following comment is copied from
@@ -67,9 +63,6 @@ j9shr_Query_IsCacheFull(J9JavaVM *vm)
  * @param Length of the memory segment.
  * @return TRUE if memory segment is in any cache, FALSE otherwise.
  */
-#if defined (J9VM_SHRTEST) && defined (J9SHR_CACHELET_SUPPORT)
-/*This function is not used from shrtest -Xrealtime */
-#else
 static BOOLEAN
 j9shr_Query_IsAddressInCache(J9JavaVM *vm, void *address, UDATA length)
 {
@@ -105,7 +98,6 @@ j9shr_Query_IsAddressInReadWriteCache(J9JavaVM *vm, void *address, UDATA length)
 	}
 	return retval;
 }
-#endif
 
 #if !defined (J9VM_SHRTEST)
 static void

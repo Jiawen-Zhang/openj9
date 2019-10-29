@@ -45,10 +45,7 @@ protected:
 	virtual U_32 getHashTableEntriesFromCacheSize(UDATA cacheSizeBytes);
 
 	virtual UDATA getKeyForItem(const ShcItem* cacheItem);
-	
-#if defined(J9SHR_CACHELET_SUPPORT)
-	virtual bool canCreateHints() { return true; }
-#endif
+
 private:
 	/* Copy prevention */
 	SH_CompiledMethodManagerImpl(const SH_CompiledMethodManagerImpl&);
