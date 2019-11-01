@@ -138,8 +138,9 @@ typedef struct OSCache_header2 {
 	U_32 generation;
 	U_32 cacheInitComplete;
 	U_64 buildID;
+	U_64 createTime;
 	U_32 unused32[5];
-	U_64 unused64[5];
+	U_64 unused64[4];
 } OSCache_header2;
 
 typedef OSCache_header2 OSCache_header_version_current;
@@ -207,9 +208,9 @@ public:
 	
 	static void getCacheNameAndLayerFromUnqiueID(J9JavaVM* vm, const char* cacheDirName, const char* uniqueID, UDATA idLen, char* nameBuf, UDATA nameBuffLen, I_8* layer);
 	
-	static UDATA generateCacheUniqueID(J9VMThread* currentThread, const char* cacheDir, const char* cacheName, I_8 layer, U_32 cacheType, char* buf, UDATA bufLen);
+	static UDATA generateCacheUniqueID(J9VMThread* currentThread, const char* cacheDir, const char* cacheName, I_8 layer, U_32 cacheType, char* buf, UDATA bufLen, UDATA createtime, UDATA metadataBytes, UDATA classesBytes, UDATA lineNumTabBytes, UDATA varTabBytes);
 	
-	const char* getCacheUniqueID(J9VMThread* currentThread);
+	const char* getCacheUniqueID(J9VMThread* currentThread, UDATA createtime, UDATA metadataBytes, UDATA classesBytes, UDATA lineNumTabBytes, UDATA varTabBytes);
 
 	I_8 getLayer();
 
@@ -226,6 +227,7 @@ public:
 	virtual IDATA getReadWriteLockID(void) = 0;
 	virtual IDATA acquireWriteLock(UDATA lockid) = 0;
 	virtual IDATA releaseWriteLock(UDATA lockid) = 0;
+	virtual UDATA getCreateTime(void) = 0;
   	
 	virtual void *attach(J9VMThread* currentThread, J9PortShcVersion* expectedVersionData) = 0;
 

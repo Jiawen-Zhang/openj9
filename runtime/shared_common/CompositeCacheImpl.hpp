@@ -187,6 +187,10 @@ public:
 	void getMinMaxBytes(U_32 *softmx, I_32 *minAOT, I_32 *maxAOT, I_32 *minJIT, I_32 *maxJIT);
 
 	UDATA getFreeBytes(void);
+
+	UDATA getMetadataBytes(void) const;
+
+	UDATA getClassesBytes(void) const;
 	
 	UDATA getFreeAvailableBytes(void);
 
@@ -198,9 +202,9 @@ public:
 
 	U_32 getFreeDebugSpaceBytes(void);
 
-	U_32 getLineNumberTableBytes(void);
+	U_32 getLineNumberTableBytes(void) const;
 
-	U_32 getLocalVariableTableBytes(void);
+	U_32 getLocalVariableTableBytes(void) const;
 
 	UDATA getFreeReadWriteBytes(void);
 	
@@ -422,11 +426,13 @@ public:
 
 	bool isAddressInReleasedMetaDataBounds(J9VMThread* currentThread, UDATA metadataAddress) const;
 
-	const char* getCacheUniqueID(J9VMThread* currentThread) const;
+	const char* getCacheUniqueID(J9VMThread* currentThread, UDATA createtime, UDATA metadataBytes, UDATA classesBytes, UDATA lineNumTabBytes, UDATA varTabBytes) const;
 
 	const char* getCacheName(void) const;
 	
 	I_8 getLayer(void) const;
+	
+	UDATA getCreateTime(void) const;
 
 	bool verifyCacheUniqueID(J9VMThread* currentThread, const char* expectedCacheUniqueID) const;
 	
