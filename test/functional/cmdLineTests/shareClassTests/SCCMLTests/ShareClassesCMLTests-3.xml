@@ -1696,7 +1696,7 @@
 	<exec command="rm -f testjavacore.txt" quiet="false"/>
 
 	<test id="Test 185: Check the number of Layers" timeout="600" runPath=".">
-		<command>$JAVA_EXE$ $currentMode$,listAllCaches</command>
+		<command>$JAVA_EXE$ -Xshareclasses:listAllCaches</command>
 		<output type="success" caseSensitive="yes" regex="yes" javaUtilPattern="yes">cr[\s]*0</output>
 		<output type="required" caseSensitive="yes" regex="yes" javaUtilPattern="yes">cr[\s]*1</output>
 		<output type="required" caseSensitive="yes" regex="yes" javaUtilPattern="yes">cr[\s]*2</output>
@@ -1941,7 +1941,7 @@
 	</test>
 
 	<test id="Test 196: Check the number of Layers" timeout="600" runPath=".">
-		<command>$JAVA_EXE$ $currentMode$,listAllCaches</command>
+		<command>$JAVA_EXE$ -Xshareclasses:listAllCaches</command>
 		<output type="success" caseSensitive="yes" regex="yes" javaUtilPattern="yes">cr[\s]*0</output>
 		<output type="required" caseSensitive="yes" regex="yes" javaUtilPattern="yes">cr[\s]*1</output>
 		

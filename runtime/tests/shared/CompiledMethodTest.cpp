@@ -130,6 +130,8 @@ IDATA storeAndFindTest(J9JavaVM* vm)
 		goto cleanup;
 	}
 
+	INFOPRINTF("BEFORE MEM SET\n");
+
 	memset(sharedConfig, 0, sizeof(J9SharedClassConfig) + sizeof(J9SharedClassCacheDescriptor));
 	sharedConfig->softMaxBytes = -1;
 	sharedConfig->minAOT = -1;
@@ -199,10 +201,14 @@ IDATA storeAndFindTest(J9JavaVM* vm)
 
 	memset(cacheObjectMemory1, 0, cacheObjectSize);
 
+	INFOPRINTF("BEFORE NEW INSTANCE \n");
+
 	/* Create and initialize the cache map object */
 	cacheObject1 = SH_CacheMap::newInstance(vm, sharedConfig, (SH_CacheMap*)cacheObjectMemory1, "cache1", 0);
 
   	/* Start the cache object */
+
+	INFOPRINTF("BEFORE START UP \n");
 
 	rc = cacheObject1->startup(vm->mainThread, sharedpiConfig, "Root1", NULL, J9SH_DIRPERM_ABSENT, cache, &cacheHasIntegrity);
 
