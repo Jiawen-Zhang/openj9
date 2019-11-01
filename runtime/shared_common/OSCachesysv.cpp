@@ -1251,6 +1251,17 @@ SH_OSCachesysv::releaseWriteLock(UDATA lockID)
 	return rc;
 }
 
+/**
+ * Get the createTime from the OSCache_header2
+ * 
+ * @return the createTime
+ */
+UDATA
+SH_OSCachesysv::getCreateTime() {
+	OSCachesysv_header_version_current* header = (OSCachesysv_header_version_current*)_headerStart;
+	return (UDATA) header->oscHdr.createTime;
+}
+
 IDATA
 SH_OSCachesysv::enterHeaderMutex(LastErrorInfo *lastErrorInfo)
 {

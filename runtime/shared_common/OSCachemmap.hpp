@@ -72,6 +72,7 @@ public:
 	virtual IDATA getReadWriteLockID(void);
 	virtual IDATA acquireWriteLock(UDATA lockID);
 	virtual IDATA releaseWriteLock(UDATA lockID);
+	virtual UDATA getCreateTime(void);
   	
 	virtual void runExitCode();
 	
