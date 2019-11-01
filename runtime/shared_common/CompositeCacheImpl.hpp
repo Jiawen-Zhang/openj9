@@ -434,6 +434,8 @@ public:
 	
 	UDATA getCreateTime(void) const;
 
+	UDATA getCreateTime(void) const;
+
 	bool verifyCacheUniqueID(J9VMThread* currentThread, const char* expectedCacheUniqueID) const;
 	
 	void setMetadataMemorySegment(J9MemorySegment** segment);

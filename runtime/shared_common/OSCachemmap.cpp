@@ -843,6 +843,17 @@ UDATA SH_OSCachemmap::getCreateTime()
 }
 
 /**
+ * Get the createTime from the OSCache_header2
+ * 
+ * @return the createTime
+ */
+UDATA SH_OSCachemmap::getCreateTime()
+{
+	OSCachemmap_header_version_current *cacheHeader = (OSCachemmap_header_version_current *)_headerStart;
+	return cacheHeader->oscHdr.createTime; 
+}
+
+/**
  * Method to acquire the read lock on the cache attach region
  *
  * Needs to be able to work with all generations

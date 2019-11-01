@@ -137,6 +137,7 @@ typedef struct OSCache_header2 {
 	U_32 dataLength;
 	U_32 generation;
 	U_32 cacheInitComplete;
+	U_64 createTime;
 	U_64 buildID;
 	U_64 createTime;
 	U_32 unused32[5];

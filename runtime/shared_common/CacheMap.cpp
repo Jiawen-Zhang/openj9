@@ -452,7 +452,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 	SH_CompositeCacheImpl* ccToUse = _ccHead;
 	SH_CompositeCacheImpl* ccNext = NULL;
 	SH_CompositeCacheImpl* ccBefore = NULL;
-	bool getFromCache = false;
+	bool isCacheUniqueIdStored = false;
 
 	_actualSize = (U_32)piconfig->sharedClassCacheSize;
 
@@ -487,7 +487,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 	do {
 		IDATA tryCntr = 0;
 		bool isCcHead = (ccToUse == _ccHead);
-		bool isStoreCcHead = (ccBefore == _ccHead);
+		bool storeToCcHead = (ccBefore == _ccHead);
 		const char* cacheUniqueIDPtr = NULL;
 
 		/* start up _ccHead (the top layer cache) and then statrt its pre-requiste cache (ccNext). Contine to startup ccNext and its pre-requiste cache, util there is no more pre-requiste cache.
@@ -508,8 +508,6 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 			}
 
 			rc = ccToUse->startup(currentThread, piconfig, cacheMemoryUT, runtimeFlags, _verboseFlags, _cacheName, cacheDirName, cacheDirPerm, &_actualSize, &_localCrashCntr, true, cacheHasIntegrity);
-			printf("------------------------------------------------ startup success ------------------------------------------\n");
-
 			if (rc == CC_STARTUP_OK) {
 				if (sanityWalkROMClassSegment(currentThread, ccToUse) == 0) {
 					rc = CC_STARTUP_CORRUPT;
@@ -530,8 +528,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 				U_32 cacheType = J9_ARE_ALL_BITS_SET(*runtimeFlags, J9SHR_RUNTIMEFLAG_ENABLE_PERSISTENT_CACHE) ? J9PORT_SHR_CACHE_TYPE_PERSISTENT : J9PORT_SHR_CACHE_TYPE_NONPERSISTENT;
 				SH_OSCache::getCacheDir(vm, cacheDirName, cacheDirBuf, J9SH_MAXPATH, cacheType, false);
 
-
-				if (!getFromCache && isStoreCcHead) {
+				if (!isCacheUniqueIdStored && storeToCcHead) {
 					if (ccBefore && ccToUse->getPrevious()->enterWriteMutex(currentThread, false, fnName) == 0) {
 						storeCacheUniqueID(currentThread, cacheDirBuf, ccToUse->getPrevious(), ccToUse->getCreateTime(), ccToUse->getMetadataBytes(), ccToUse->getClassesBytes(), ccToUse->getLineNumberTableBytes(), ccToUse->getLocalVariableTableBytes(), &cacheUniqueIDPtr, &idLen);
 						memset(cacheUniqueID, 0, sizeof(cacheUniqueID));
@@ -562,7 +559,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 						ccToUse->setWriteHash(currentThread, 0);				/* Initialize to zero so that peek will work */
 					}
 
-					IDATA preqRC = getPrereqCache(currentThread, cacheDirBuf, ccToUse, false, &cacheUniqueIDPtr, &idLen, &getFromCache, cacheUniqueID);
+					IDATA preqRC = getPrereqCache(currentThread, cacheDirBuf, ccToUse, false, &cacheUniqueIDPtr, &idLen, &isCacheUniqueIdStored, cacheUniqueID);
 
 					if (0 > preqRC) {
 						if (CM_CACHE_CORRUPT == preqRC) {
@@ -595,7 +592,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 						I_8 preLayer = 0;
 						char cacheNameBuf[USER_SPECIFIED_CACHE_NAME_MAXLEN];
 
-						if (getFromCache) {
+						if (isCacheUniqueIdStored) {
 							memset(cacheUniqueID, 0, sizeof(cacheUniqueID));
 							strncpy(cacheUniqueID, cacheUniqueIDPtr, idLen);
 						}
@@ -7895,6 +7892,7 @@ SH_CacheMap::isAddressInReleasedMetaDataBounds(J9VMThread* currentThread, UDATA 
  * 	@param [out] the Unique ID of a pre-requiste cache.
  * 	@param [out] the length of the Unique ID string.
  *  @param [out] true if the unique id is gotten from the pre-requisite cache / false if the unique id is generated for startup 
+ * 	@param [out] the generated unique id for startup
  *
  *	@return 1 This cache depends on a lower layer cache. The unique ID of the re-requisite cache is found in or stored to this cache as metadata.
  *			0 This cache does not depend on a low layer cache.
@@ -7905,7 +7903,7 @@ SH_CacheMap::isAddressInReleasedMetaDataBounds(J9VMThread* currentThread, UDATA 
  *
  */
 IDATA
-SH_CacheMap::getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccToUse, bool startupForStats, const char** prereqCacheID, UDATA* idLen, bool *getFromCache, char* buf)
+SH_CacheMap::getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccToUse, bool startupForStats, const char** prereqCacheID, UDATA* idLen, bool *isCacheUniqueIdStored, char* buf)
 {
 	ShcItem* it = NULL;
 	IDATA result = 0;
@@ -7938,7 +7936,7 @@ SH_CacheMap::getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_
 			const J9UTF8* scopeUTF8 = (const J9UTF8*)ITEMDATA(it);
 			*prereqCacheID = (const char*)J9UTF8_DATA(scopeUTF8);
 			*idLen = J9UTF8_LENGTH(scopeUTF8);
-			*getFromCache = true;
+			*isCacheUniqueIdStored = true;
 			Trc_SHR_CM_getPrereqCache_Found(currentThread, J9UTF8_LENGTH(scopeUTF8), J9UTF8_DATA(scopeUTF8));
 			result = 1;
 		} else {
@@ -7989,7 +7987,7 @@ SH_CacheMap::getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_
 		result = 1;
 		*prereqCacheID = (const char*) buf;
 		*idLen = keylen;
-		*getFromCache = false;
+		*isCacheUniqueIdStored = false;
 	}
 
 done:
@@ -8002,12 +8000,13 @@ done:
  *	@param [in] currentThread The current JVM thread
  *	@pamra [in] the cache directory
  *	@param [in] ccBefore The previous cache which the cache unique id is stored in.
- *  @param [in] metadataBytes  The size of the metadata section of current oscache.
- *  @param [in] classesBytes  The size of the classes section of current oscache.
- *  @param [in] lineNumTabBytes  The size of the line number table section of current oscache.
- *  @param [in] varTabBytes  The size of the  variable table section of current oscache.
- * 	@param [out] the Unique ID of a re-requiste cache.
- * 	@param [out] the length of the Unique ID string.
+ *	@param [in] createtime The cache create time which is stored in OSCache_header2.
+ *	@param [in] metadataBytes  The size of the metadata section of current oscache.
+ *	@param [in] classesBytes  The size of the classes section of current oscache.
+ *	@param [in] lineNumTabBytes  The size of the line number table section of current oscache.
+ *	@param [in] varTabBytes  The size of the  variable table section of current oscache.
+ *	@param [out] the Unique ID of a re-requiste cache.
+ *	@param [out] the length of the Unique ID string.
  *
  *	@return 1 This cache depends on a lower layer cache. The unique ID of the re-requisite cache is found in or stored to this cache as metadata.
  *			0 This cache does not depend on a low layer cache.

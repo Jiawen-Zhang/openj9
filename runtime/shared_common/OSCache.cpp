@@ -1233,6 +1233,7 @@ SH_OSCache::getOSCacheStart() {
 /**
  * Get the unique ID of the current cache
  * @param[in] currentThread  The current VM thread.
+ * @param [in] createtime The cache create time which is stored in OSCache_header2.
  * @param[in] metadataBytes  The size of the metadata section of current oscache.
  * @param[in] classesBytes  The size of the classes section of current oscache.
  * @param[in] lineNumTabBytes  The size of the line number table section of current oscache.
@@ -1270,6 +1271,7 @@ SH_OSCache::getCacheUniqueID(J9VMThread* currentThread, UDATA createtime, UDATA 
  * @param[in] cacheType  The cache type
  * @param[out] buf  The buffer for the cache unique ID
  * @param[out] bufLen  The length of the buffer
+ * @param [in] createtime The cache create time which is stored in OSCache_header2.
  * @param[in] metadataBytes  The size of the metadata section of current oscache.
  * @param[in] classesBytes  The size of the classes section of current oscache.
  * @param[in] lineNumTabBytes  The size of the line number table section of current oscache.

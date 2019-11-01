@@ -39,7 +39,7 @@
 #define CM_CACHE_CORRUPT -2
 #define CM_CACHE_STORE_PREREQ_ID_FAILED -3
 
-#define J9SHR_UNIQUE_CACHE_ID_BUFSIZE  (J9SH_MAXPATH + 35)
+#define J9SHR_UNIQUE_CACHE_ID_BUFSIZE  (J9SH_MAXPATH + 70)
 
 typedef struct MethodSpecTable {
 	char* className;
@@ -504,7 +504,7 @@ private:
 	IDATA startupCacheletForStats(J9VMThread* currentThread, SH_CompositeCache* cachelet);
 #endif /*J9SHR_CACHELET_SUPPORT*/
 
-	IDATA getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccToUse, bool startupForStats, const char** prereqCacheID, UDATA* idLen, bool *getFromCache, char* buf);
+	IDATA getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccToUse, bool startupForStats, const char** prereqCacheID, UDATA* idLen, bool *isCacheUniqueIdStored, char* buf);
 
 	IDATA storeCacheUniqueID(J9VMThread* currentThread, const char* cacheDir, SH_CompositeCacheImpl* ccBefore, UDATA createtime, UDATA metadataBytes, UDATA classesBytes, UDATA lineNumTabBytes, UDATA varTabBytes, const char** prereqCacheID, UDATA* idLen);
 

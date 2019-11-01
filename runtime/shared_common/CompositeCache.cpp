@@ -1712,7 +1712,7 @@ releaseLockCheck:
 	if (rc == CC_STARTUP_OK) {
 		_started = true;
 		if (NULL == cacheMemory) {
-			if (NULL == getCacheUniqueID(currentThread, getCreateTime() ,getMetadataBytes(), getClassesBytes(), getLineNumberTableBytes(), getLocalVariableTableBytes())) {
+			if (NULL == getCacheUniqueID(currentThread, getCreateTime(), getMetadataBytes(), getClassesBytes(), getLineNumberTableBytes(), getLocalVariableTableBytes())) {
 				rc = CC_STARTUP_FAILED;
 			}
 		}
@@ -7071,6 +7071,7 @@ SH_CompositeCacheImpl::isAddressInReleasedMetaDataBounds(J9VMThread* currentThre
  * Return the unique ID of the current cache
  *
  * @param [in] currentThread The current JVM thread
+ * @param [in] createtime The cache create time which is stored in OSCache_header2.
  * @param [in] metadataBytes  The size of the metadata section of current oscache.
  * @param [in] classesBytes  The size of the classes section of current oscache.
  * @param [in] lineNumTabBytes  The size of the line number table section of current oscache.
@@ -7133,7 +7134,7 @@ SH_CompositeCacheImpl::getLayer(void) const
 }
 
 /**
- * Return the cache layer number.
+ * Return the cache cache create time.
  */
 UDATA
 SH_CompositeCacheImpl::getCreateTime(void) const
