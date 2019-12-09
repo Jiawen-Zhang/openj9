@@ -8043,9 +8043,13 @@ SH_CacheMap::storeCacheUniqueID(J9VMThread* currentThread, const char* cacheDir,
 		return result;
 	}
 
+	printf("the before sizeof(key) is %d\n", (int) sizeof(key));
 	Trc_SHR_CM_storeCacheUniqueID_generateCacheUniqueID_before(currentThread, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
 	SH_OSCache::generateCacheUniqueID(currentThread, cacheDir, _cacheName, layer - 1, getCacheTypeFromRuntimeFlags(*_runtimeFlags), key, sizeof(key), createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
+	printf("the cacheuniqueid is %s\n", key);
+	printf("the after sizeof(key) is %d\n", (int) sizeof(key));
 	UDATA keylen = strlen(key);
+	printf("the return keylen is %d\n", (int) keylen);
 	Trc_SHR_CM_storeCacheUniqueID_generateCacheUniqueID_after(currentThread, keylen, key);
 
 	J9UTF8* utfKeyStruct = (J9UTF8*)utfKeyPtr;

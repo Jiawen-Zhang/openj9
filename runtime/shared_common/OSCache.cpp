@@ -1259,6 +1259,8 @@ SH_OSCache::getCacheUniqueID(J9VMThread* currentThread, U_64 createtime, UDATA m
 		return NULL;
 	}
 	generateCacheUniqueID(currentThread, _cacheDirName, _cacheName, _layer, cacheType, _cacheUniqueID, sizeRequired, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
+	printf("the cacheuniqueid is %s\n", _cacheUniqueID);
+	printf("the return sizeRequired is %d\n", (int) sizeRequired);
 	return _cacheUniqueID;
 }
 
@@ -1296,8 +1298,10 @@ SH_OSCache::generateCacheUniqueID(J9VMThread* currentThread, const char* cacheDi
 	/* Directory is included here, so if the cache directory is renamed, caches with layer > 0 becomes unusable */
 	getCachePathName(PORTLIB, cacheDirName, cacheFilePathName, J9SH_MAXPATH, nameWithVGen);
 	I_64 fileSize = j9file_length(cacheFilePathName);
-	UDATA len = sizeof(cacheFilePathName) + sizeof(fileSize) + sizeof(createtime) + sizeof(metadataBytes) + sizeof(classesBytes) + sizeof(lineNumTabBytes) + sizeof(varTabBytes) + 7;
-	if (NULL != buf) Trc_SHR_Assert_True(len <= bufLen);
+	UDATA bufLenrequired = 0;
+	j9str_printf(PORTLIB, NULL, bufLenrequired, "%s-%llx_%llx_%zx_%zx_%zx_%zx", cacheFilePathName, fileSize, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
+	printf("the bufLenrequired is %d\n", (int) bufLenrequired);
+	printf("the bufLen is %d\n", (int) bufLen);
 	return j9str_printf(PORTLIB, buf, bufLen, "%s-%llx_%llx_%zx_%zx_%zx_%zx", cacheFilePathName, fileSize, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
 }
 
