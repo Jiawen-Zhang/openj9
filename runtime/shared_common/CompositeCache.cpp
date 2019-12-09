@@ -1714,7 +1714,7 @@ releaseLockCheck:
 		if (NULL == cacheMemory) {
 			Trc_SHR_CC_startup_getCacheUniqueID_before(currentThread, getCreateTime(), getMetadataBytes(), getClassesBytes(), getLineNumberTableBytes(), getLocalVariableTableBytes());
 			const char* uniqueId = getCacheUniqueID(currentThread);
-			Trc_SHR_CC_startup_getCacheUniqueID_after(currentThread, strlen(uniqueId), uniqueId);
+			Trc_SHR_CC_startup_getCacheUniqueID_after(currentThread, uniqueId);
 			if (NULL == uniqueId) {
 				rc = CC_STARTUP_FAILED;
 			}
@@ -3659,7 +3659,7 @@ SH_CompositeCacheImpl::getFreeBytes(void)
 
 
 /**
- * Get the number of  bytes in the shared classes cache between UPDATEPTR and CADEBUGSTART
+ * Get the number of bytes in the shared classes cache between UPDATEPTR and CADEBUGSTART
  *
  * @return the size of the metadata section in cache.
  */
@@ -3674,7 +3674,7 @@ SH_CompositeCacheImpl::getMetadataBytes(void) const
 }
 
 /**
- * Get the number of  bytes in the shared classes cache between CASTART and SEGUPDATEPTR
+ * Get the number of bytes in the shared classes cache between CASTART and SEGUPDATEPTR
  *
  * @return the size of the classes section in cache.
  */
@@ -7078,7 +7078,7 @@ SH_CompositeCacheImpl::isAddressInReleasedMetaDataBounds(J9VMThread* currentThre
  * @param [in] metadataBytes  The size of the metadata section of current oscache.
  * @param [in] classesBytes  The size of the classes section of current oscache.
  * @param [in] lineNumTabBytes  The size of the line number table section of current oscache.
- * @param [in] varTabBytes  The size of the  variable table section of current oscache.
+ * @param [in] varTabBytes  The size of the variable table section of current oscache.
  *
  * @return NULL if the cache is not started. Otherwise, return the unique ID of the current cache.
  *
@@ -7105,9 +7105,7 @@ bool
 SH_CompositeCacheImpl::verifyCacheUniqueID(J9VMThread* currentThread, const char* expectedCacheUniqueID) const
 {
 	const char* actualCacheUniqueID = getCacheUniqueID(currentThread);
-	UDATA actualIDlen = strlen(actualCacheUniqueID);
-	UDATA expectIDlen = strlen(expectedCacheUniqueID);
-	bool rc = (0 == strncmp(expectedCacheUniqueID, actualCacheUniqueID, ((actualIDlen < expectIDlen) ? actualIDlen : expectIDlen)));
+	bool rc = (0 == strcmp(expectedCacheUniqueID, actualCacheUniqueID));
 	if (false == rc) {
 		Trc_SHR_CC_verifyCacheUniqueID_Failed(currentThread, expectedCacheUniqueID, actualCacheUniqueID);
 	}

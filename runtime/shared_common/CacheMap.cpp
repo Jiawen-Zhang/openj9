@@ -532,6 +532,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 					if (ccPrevious->enterWriteMutex(currentThread, false, fnName) == 0) {
 						storeCacheUniqueID(currentThread, cacheDirBuf, ccToUse->getCreateTime(), ccToUse->getMetadataBytes(), ccToUse->getClassesBytes(), ccToUse->getLineNumberTableBytes(), ccToUse->getLocalVariableTableBytes(), &cacheUniqueIDPtr, &idLen);
 						memset(cacheUniqueID, 0, sizeof(cacheUniqueID));
+						Trc_SHR_Assert_True(idLen <= sizeof(cacheUniqueID));
 						memcpy(cacheUniqueID, cacheUniqueIDPtr, idLen);
 						ccPrevious->exitWriteMutex(currentThread, fnName);
 					} else {
@@ -598,6 +599,7 @@ SH_CacheMap::startup(J9VMThread* currentThread, J9SharedClassPreinitConfig* pico
 						
 						if (isCacheUniqueIdStored) {
 							memset(cacheUniqueID, 0, sizeof(cacheUniqueID));
+							Trc_SHR_Assert_True(idLen <= sizeof(cacheUniqueID));
 							memcpy(cacheUniqueID, cacheUniqueIDPtr, idLen);
 							SH_OSCache::getCacheNameAndLayerFromUnqiueID(vm, cacheDirBuf, cacheUniqueID, idLen, cacheNameBuf, USER_SPECIFIED_CACHE_NAME_MAXLEN, &preLayer);
 							cacheName = cacheNameBuf;
@@ -7897,10 +7899,10 @@ SH_CacheMap::isAddressInReleasedMetaDataBounds(J9VMThread* currentThread, UDATA 
  *  Get the unique ID of a pre-requisite cache at a lower layer
  *
  *	@param [in] currentThread The current JVM thread
- *	@pamra [in] the cache directory
+ *	@param [in] the cache directory
  *	@param [in] ccToUse The current cache that depends on lower layer cache.
  *	@param [in] startupForStats If the cache is started up for cache statistics
- *	@param [out] the Unique ID of a pre-requiste cache.
+ *	@param [out] the Unique ID of a pre-requisite cache.
  *	@param [out] the length of the Unique ID string.
  *	@param [out] true if the unique id of pre-requisite cache is found, false otherwise.
  *
@@ -7997,13 +7999,13 @@ SH_CacheMap::getPrereqCache(J9VMThread* currentThread, const char* cacheDir, SH_
  *  Store the actual cache unique ID in the previous cache 
  *
  *	@param [in] currentThread The current JVM thread
- *	@pamra [in] the cache directory
+ *	@param [in] the cache directory
  *	@param [in] createtime The cache create time which is stored in OSCache_header2.
  *	@param [in] metadataBytes  The size of the metadata section of current oscache.
  *	@param [in] classesBytes  The size of the classes section of current oscache.
  *	@param [in] lineNumTabBytes  The size of the line number table section of current oscache.
- *	@param [in] varTabBytes  The size of the  variable table section of current oscache.
- *	@param [out] the Unique ID of a re-requiste cache.
+ *	@param [in] varTabBytes  The size of the variable table section of current oscache.
+ *	@param [out] the Unique ID of a re-requisite cache.
  *	@param [out] the length of the Unique ID string.
  *
  *	@return 1 This cache depends on a lower layer cache. The unique ID of the re-requisite cache is found in or stored to this cache as metadata.
@@ -8031,7 +8033,7 @@ SH_CacheMap::storeCacheUniqueID(J9VMThread* currentThread, const char* cacheDir,
 	}
 
 	const J9UTF8* tokenKey = NULL;
-	char utfKey[J9SHR_UNIQUE_CACHE_ID_BUFSIZE];
+	char utfKey[J9SHR_UNIQUE_CACHE_ID_BUFSIZE + sizeof(J9UTF8*)];
 	char key[J9SHR_UNIQUE_CACHE_ID_BUFSIZE];
 	char* utfKeyPtr = (char*)&utfKey;
 
@@ -8042,7 +8044,7 @@ SH_CacheMap::storeCacheUniqueID(J9VMThread* currentThread, const char* cacheDir,
 	}
 
 	Trc_SHR_CM_storeCacheUniqueID_generateCacheUniqueID_before(currentThread, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
-	SH_OSCache::generateCacheUniqueID(currentThread, cacheDir, _cacheName, layer - 1, getCacheTypeFromRuntimeFlags(*_runtimeFlags), key, J9SHR_UNIQUE_CACHE_ID_BUFSIZE, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
+	SH_OSCache::generateCacheUniqueID(currentThread, cacheDir, _cacheName, layer - 1, getCacheTypeFromRuntimeFlags(*_runtimeFlags), key, sizeof(key), createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
 	UDATA keylen = strlen(key);
 	Trc_SHR_CM_storeCacheUniqueID_generateCacheUniqueID_after(currentThread, keylen, key);
 

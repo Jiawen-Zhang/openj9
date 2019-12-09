@@ -1237,7 +1237,7 @@ SH_OSCache::getOSCacheStart() {
  * @param[in] metadataBytes  The size of the metadata section of current oscache.
  * @param[in] classesBytes  The size of the classes section of current oscache.
  * @param[in] lineNumTabBytes  The size of the line number table section of current oscache.
- * @param[in] varTabBytes  The size of the  variable table section of current oscache.
+ * @param[in] varTabBytes  The size of the variable table section of current oscache.
  *
  * @return the cache unique ID
  */
@@ -1271,11 +1271,11 @@ SH_OSCache::getCacheUniqueID(J9VMThread* currentThread, U_64 createtime, UDATA m
  * @param[in] cacheType  The cache type
  * @param[out] buf  The buffer for the cache unique ID
  * @param[out] bufLen  The length of the buffer
- * @param [in] createtime The cache create time which is stored in OSCache_header2.
+ * @param[in] createtime The cache create time which is stored in OSCache_header2.
  * @param[in] metadataBytes  The size of the metadata section of current oscache.
  * @param[in] classesBytes  The size of the classes section of current oscache.
  * @param[in] lineNumTabBytes  The size of the line number table section of current oscache.
- * @param[in] varTabBytes  The size of the  variable table section of current oscache.
+ * @param[in] varTabBytes  The size of the variable table section of current oscache.
  *
  * @return If buf is not NULL, the number of characters printed into buf is returned , not including the NUL terminator.
  *          If buf is NULL, the size of the buffer required to print to the unique ID, including the NUL terminator is returned.
@@ -1296,7 +1296,9 @@ SH_OSCache::generateCacheUniqueID(J9VMThread* currentThread, const char* cacheDi
 	/* Directory is included here, so if the cache directory is renamed, caches with layer > 0 becomes unusable */
 	getCachePathName(PORTLIB, cacheDirName, cacheFilePathName, J9SH_MAXPATH, nameWithVGen);
 	I_64 fileSize = j9file_length(cacheFilePathName);
-	return j9str_printf(PORTLIB, buf, bufLen, "%s-%llx_%llx_%llx_%llx_%llx_%llx", cacheFilePathName, fileSize, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
+	UDATA len = sizeof(cacheFilePathName) + sizeof(fileSize) + sizeof(createtime) + sizeof(metadataBytes) + sizeof(classesBytes) + sizeof(lineNumTabBytes) + sizeof(varTabBytes) + 7;
+	if (NULL != buf) Trc_SHR_Assert_True(len <= bufLen);
+	return j9str_printf(PORTLIB, buf, bufLen, "%s-%llx_%llx_%zx_%zx_%zx_%zx", cacheFilePathName, fileSize, createtime, metadataBytes, classesBytes, lineNumTabBytes, varTabBytes);
 }
 
 /**
