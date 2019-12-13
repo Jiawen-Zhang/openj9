@@ -24,7 +24,7 @@
 
 <!DOCTYPE suite SYSTEM "cmdlinetester.dtd">
 
-<!--  Test 120s-a to Test 196: 89 tests -->
+<!--  Test 120s-a to Test 197: 90 tests -->
 
 <suite id="Shared Classes CommandLineOptionTests Suite ">
 
@@ -1906,8 +1906,7 @@
 		<output type="failure" caseSensitive="yes" regex="no">Processing dump event</output>
 	</test>
 
-	<!-- On 64-bit Windows, the timestamp does not change after the middle layer cache has been modified. Thus, the test 193 - 194 are disabled on 64-bit windows -->
-	<test id="Test 193: Modify the middle layer (layer 2)" timeout="600" runPath=".">
+	<test id="Test 193: Modify the middle layer (layer 1)" timeout="600" runPath=".">
 		<command>$JAVA_EXE$ $currentMode$,layer=1 $CP_HANOI$ $PROGRAM_HANOI$</command>
 		<output type="success" caseSensitive="yes" regex="no">Puzzle solved!</output>
 		
@@ -1952,7 +1951,18 @@
 		<output type="failure" caseSensitive="yes" regex="no">Processing dump event</output>
 	</test>	
 
-	<test id="Test 180 - 196 clean up with destroyAllLayers" timeout="600" runPath=".">
+	<test id="Test 197: After the invalid layer has been destroyed, try to create a new layer of the cache" timeout="600" runPath=".">
+		<command>$JAVA_EXE$ $currentMode$,createLayer -version</command>
+		<output type="success" caseSensitive="yes" regex="yes" javaUtilPattern="yes">(java|openjdk) version</output>
+
+		<output type="failure" caseSensitive="no" regex="no">Failed to start up the shared cache</output>
+		<output type="failure" caseSensitive="no" regex="no">Unhandled Exception</output>
+		<output type="failure" caseSensitive="yes" regex="no">Exception:</output>
+		<output type="failure" caseSensitive="no" regex="no">corrupt</output>
+		<output type="failure" caseSensitive="yes" regex="no">Processing dump event</output>
+	</test>
+
+	<test id="Test 180 - 197 clean up with destroyAllLayers" timeout="600" runPath=".">
 		<command>$JAVA_EXE$ $currentMode$,destroyAllLayers</command>
 		<output type="success" caseSensitive="yes" regex="no">Cache does not exist</output>
 		<output type="success" caseSensitive="yes" regex="no">has been destroyed</output>

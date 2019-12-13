@@ -302,7 +302,7 @@
 	<exclude id="Test 192: Try to load the cache and make sure classes are being found in the cache" platform=".*-3[12].*">
 		<reason> The multi-layer cache feature is only supported on 64-bit platforms </reason>
 	</exclude>
-	<exclude id="Test 193: Modify the middle layer (layer 2)" platform=".*-3[12].*">
+	<exclude id="Test 193: Modify the middle layer (layer 1)" platform=".*-3[12].*">
 		<reason> The multi-layer cache feature is only supported on 64-bit platforms </reason>
 	</exclude>
 	<exclude id="Test 194: Try to load the cache again and expect to get a failure" platform=".*-3[12].*">
@@ -314,13 +314,10 @@
 	<exclude id="Test 196: Check the number of Layers" platform=".*-3[12].*">
 		<reason> The multi-layer cache feature is only supported on 64-bit platforms </reason>
 	</exclude>
-	<exclude id="Test 180 - 196 clean up with destroyAllLayers" platform=".*-3[12].*">
+	<exclude id="Test 197: After the invalid layer has been destroyed, try to create a new layer of the cache" platform=".*-3[12].*">
 		<reason> The multi-layer cache feature is only supported on 64-bit platforms </reason>
 	</exclude>
-	<exclude id="Test 193: Modify the middle layer (layer 2)" platform="win_x86-64_cr">
-		<reason> The timestamp does not change after the middle layer cache has been modified on 64-bit Windows</reason>
-	</exclude>
-	<exclude id="Test 194: Try to load the cache again and expect to get a failure" platform="win_x86-64_cr">
-		<reason> The timestamp does not change after the middle layer cache has been modified on 64-bit Windows</reason>
+	<exclude id="Test 180 - 197 clean up with destroyAllLayers" platform=".*-3[12].*">
+		<reason> The multi-layer cache feature is only supported on 64-bit platforms </reason>
 	</exclude>
 </suite>
